@@ -43,7 +43,6 @@ import { HeroComponent } from './hero/hero.component';
     StrengthPipe,
     HeroComponent
   ],
-  providers: [ HeroService, MessageService ],
   bootstrap: [ AppComponent ]
 })
 export class AppModule { }
