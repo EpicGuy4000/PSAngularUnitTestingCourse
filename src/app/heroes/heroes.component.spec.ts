@@ -5,18 +5,50 @@ import { Observable, of } from "rxjs";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { Component, Input } from "@angular/core";
 import { By } from "@angular/platform-browser";
+import { HeroComponent } from "../hero/hero.component";
 import { RouterTestingModule } from "@angular/router/testing";
-import { RouterModule } from "@angular/router";
 
 describe('HeroesComponent', () => {
+  let fixture: ComponentFixture<HeroesComponent>;
+  let mockHeroService: jasmine.SpyObj<HeroService>;
+  const HEROES = [
+    {id: 1, name: 'SpiderDude', strength: 8},
+    {id: 2, name: 'Wonderful Woman', strength: 20},
+    {id: 3, name: 'SuperDude', strength: 100},
+  ];
+
+  describe("=Deep=", () => {
+    beforeEach(() => {
+      mockHeroService = jasmine.createSpyObj('HeroService', [ 'getHeroes', 'addHero', 'deleteHero' ]);
+
+      TestBed.configureTestingModule({
+        declarations: [
+          HeroesComponent,
+          HeroComponent
+        ],
+        imports: [
+          RouterTestingModule.withRoutes([])
+        ],
+        providers: [ {
+          provide: HeroService,
+          useValue: mockHeroService
+        }]
+      });
+      fixture = TestBed.createComponent(HeroesComponent);
+    });
+
+    it('should render each hero as a HeroComponent', () => {
+      mockHeroService.getHeroes.and.returnValue(of(HEROES));
+
+      // run ngOnInit
+      fixture.detectChanges();
+
+      const heroComponentDEs = fixture.debugElement.queryAll(By.directive(HeroComponent));
+      expect(heroComponentDEs.map(de => de.componentInstance as HeroComponent).map(hc => hc.hero)).toEqual(HEROES);
+    })
+  });
+
   describe("=Shallow=", () => {
-    let fixture: ComponentFixture<HeroesComponent>;
-    let mockHeroService: jasmine.SpyObj<HeroService>;
-    const HEROES = [
-      {id: 1, name: 'SpiderDude', strength: 8},
-      {id: 2, name: 'Wonderful Woman', strength: 20},
-      {id: 3, name: 'SuperDude', strength: 100},
-    ];
 
     @Component({
       selector: 'app-hero',

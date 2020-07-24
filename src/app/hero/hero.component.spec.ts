@@ -1,14 +1,16 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { HeroComponent } from "./hero.component";
 import { By } from "@angular/platform-browser";
+import { RouterTestingModule } from "@angular/router/testing";
 
 describe("HeroComponent", () => {
-  describe("(shallow tests)", () => {
+  describe("=Shallow=", () => {
     let fixture: ComponentFixture<HeroComponent>;
 
     beforeEach(() => {
       TestBed.configureTestingModule({
-        declarations: [ HeroComponent ]
+        declarations: [ HeroComponent ],
+        imports: [ RouterTestingModule.withRoutes([])]
       });
       fixture = TestBed.createComponent(HeroComponent);
     });
