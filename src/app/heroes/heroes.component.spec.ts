@@ -3,19 +3,35 @@ import { Hero } from "../hero";
 import { HeroService } from "../hero.service";
 import { Observable, of } from "rxjs";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { Component, Input } from "@angular/core";
+import { Component, Directive, Input } from "@angular/core";
 import { By } from "@angular/platform-browser";
 import { HeroComponent } from "../hero/hero.component";
-import { RouterTestingModule } from "@angular/router/testing";
+
+@Directive({
+  selector: '[routerLink]',
+  host: { '(click)': 'onClick()'}
+})
+class RouterLinkDirectiveStub {
+  @Input('routerLink') linkParams: any;
+  navigatedTo: any = null;
+
+  onClick() {
+    this.navigatedTo = this.linkParams;
+  }
+}
 
 describe('HeroesComponent', () => {
   let fixture: ComponentFixture<HeroesComponent>;
   let mockHeroService: jasmine.SpyObj<HeroService>;
-  const HEROES = [
-    {id: 1, name: 'SpiderDude', strength: 8},
-    {id: 2, name: 'Wonderful Woman', strength: 20},
-    {id: 3, name: 'SuperDude', strength: 100},
-  ];
+  let HEROES : Hero[];
+
+  beforeEach(() => {
+    HEROES = [
+      {id: 1, name: 'SpiderDude', strength: 8},
+      {id: 2, name: 'Wonderful Woman', strength: 20},
+      {id: 3, name: 'SuperDude', strength: 100},
+    ];
+  });
 
   describe("=Deep=", () => {
     beforeEach(() => {
@@ -24,10 +40,8 @@ describe('HeroesComponent', () => {
       TestBed.configureTestingModule({
         declarations: [
           HeroesComponent,
-          HeroComponent
-        ],
-        imports: [
-          RouterTestingModule.withRoutes([])
+          HeroComponent,
+          RouterLinkDirectiveStub
         ],
         providers: [ {
           provide: HeroService,
@@ -45,6 +59,67 @@ describe('HeroesComponent', () => {
 
       const heroComponentDEs = fixture.debugElement.queryAll(By.directive(HeroComponent));
       expect(heroComponentDEs.map(de => de.componentInstance as HeroComponent).map(hc => hc.hero)).toEqual(HEROES);
+    });
+
+    it(`should call HeroSevice.deleteHero
+      when the Hero Component's delete button is clicked`, () => {
+      spyOn(fixture.componentInstance, 'delete');
+      mockHeroService.getHeroes.and.returnValue(of(HEROES));
+
+      fixture.detectChanges();
+
+      const heroComponents = fixture.debugElement.queryAll(By.directive(HeroComponent));
+      heroComponents[0]
+        .query(By.css('button'))
+        .triggerEventHandler('click', jasmine.createSpyObj<Event>(['stopPropagation']));
+
+      expect(fixture.componentInstance.delete).toHaveBeenCalledWith(HEROES[0]);
+    });
+
+    it(`should call HeroSevice.deleteHero
+      when the Hero Component's delete event is raised`, () => {
+      spyOn(fixture.componentInstance, 'delete');
+      mockHeroService.getHeroes.and.returnValue(of(HEROES));
+
+      fixture.detectChanges();
+
+      const heroComponent = fixture.debugElement.queryAll(By.directive(HeroComponent))[0];
+      heroComponent.triggerEventHandler('delete', undefined);
+
+      expect(fixture.componentInstance.delete).toHaveBeenCalledWith(HEROES[0]);
+    });
+
+    it('should add a new hero to the hero list when the add button is clicked', () => {
+      mockHeroService.getHeroes.and.returnValue(of(HEROES));
+      fixture.detectChanges();
+      const name = 'Mr Ice';
+      mockHeroService.addHero.and.callFake((hero: Hero) => {
+        return of({ id: 5, name: hero.name, strength: hero.strength });
+      });
+      const inputElement = fixture.debugElement.query(By.css('input')).nativeElement;
+      const addButton = fixture.debugElement.query(By.css('button:first-of-type'));
+
+      inputElement.value = name;
+      addButton.triggerEventHandler('click', null);
+      fixture.detectChanges();
+
+      const heroText = fixture.debugElement.query(By.css('ul')).nativeElement.textContent;
+      expect(heroText).toContain(name);
+    });
+
+    it('should have the correct route for the first hero', () => {
+      mockHeroService.getHeroes.and.returnValue(of(HEROES));
+      fixture.detectChanges();
+      const heroComponents = fixture.debugElement.queryAll(By.directive(HeroComponent));
+
+      let routerLink = heroComponents[0]
+        .query(By.directive(RouterLinkDirectiveStub))
+        .injector.get(RouterLinkDirectiveStub);
+
+      heroComponents[0].query(By.css('a')).triggerEventHandler('click', null);
+
+      fixture.detectChanges();
+      expect(routerLink.navigatedTo).toEqual('/detail/1');
     })
   });
 
@@ -91,16 +166,9 @@ describe('HeroesComponent', () => {
 
   describe('=Isolation=', () => {
     let component: HeroesComponent;
-    let HEROES: Hero[];
     let mockHeroService: jasmine.SpyObj<HeroService>;
 
     beforeEach(() => {
-      HEROES = [
-        {id: 1, name: 'SpiderDude', strength: 8},
-        {id: 2, name: 'Wonderful Woman', strength: 20},
-        {id: 3, name: 'SuperDude', strength: 100},
-      ];
-
       mockHeroService = jasmine.createSpyObj<HeroService>('HeroService', ['getHeroes', 'addHero', 'deleteHero']);
 
       component = new HeroesComponent(mockHeroService);
