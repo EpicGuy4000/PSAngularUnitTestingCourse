@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { async, ComponentFixture, fakeAsync, flush, TestBed, tick } from "@angular/core/testing";
 import { HeroDetailComponent } from "./hero-detail.component";
 import { HeroService } from "../hero.service";
 import SpyObj = jasmine.SpyObj;
@@ -48,4 +48,25 @@ describe('HeroDetailComponent', () => {
 
     expect(fixture.nativeElement.querySelector('h2').textContent).toContain('SUPERDUDE');
   });
+
+  it('should call updateHero when save is called', fakeAsync(() => {
+    mockHeroService.updateHero.and.callFake((hero: Hero) => of<Hero>(hero));
+    fixture.detectChanges();
+
+    fixture.componentInstance.save();
+    //tick(250); for when we know the the length of the task
+    flush(); // for when we don't know the length of the task
+    expect(mockHeroService.updateHero).toHaveBeenCalled();
+  }));
+
+  // it('should call updateHero when save is called', async(() => {
+  //   mockHeroService.updateHero.and.callFake((hero: Hero) => of<Hero>(hero));
+  //   fixture.detectChanges();
+  //
+  //   fixture.componentInstance.save();
+  //
+  //   fixture.whenStable().then(() => {
+  //     expect(mockHeroService.updateHero).toHaveBeenCalled();
+  //   });
+  // }));
 })
